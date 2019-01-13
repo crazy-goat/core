@@ -11,5 +11,5 @@ interface RouteInterface
 
     public function getMiddlewares(): array;
 
-    public function getRouteArguments(): array;
+    public function getAttributes(): array;
 }

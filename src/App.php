@@ -83,6 +83,10 @@ class App
             } else {
                 throw new \RuntimeException('Controller must be Closure or instance of ControllerInterface');
             }
+            
+            foreach ($route->getAttributes() as $key => $value) {
+                $request = $request->withAttribute($key, $value);
+            }
 
             foreach (array_reverse($route->getMiddlewares()) as $middleware) {
                 $controller->addMiddleware($this->container[$middleware]);
