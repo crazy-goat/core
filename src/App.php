@@ -142,8 +142,10 @@ class App
                 $errorHandler = $this->container->get('errorHandler');
                 if ($errorHandler instanceof ErrorHandlerInterface) {
                     $this->errorHandler = $errorHandler;
+                    return $this->errorHandler ;
                 }
             }
+            $this->errorHandler = new SimpleErrorHandler();
         }
         return $this->errorHandler;
     }

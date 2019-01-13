@@ -26,11 +26,11 @@ final class SimpleErrorHandler implements ErrorHandlerInterface
     {
         header("HTTP/1.0 500 Internal Server Error");
         echo sprintf(
-            '<h1>Error %s, in %s:%d</h1>\nStack trace:\n%s',
+            '<h1>Fatal error "%s"<br/> in %s:%d</h1>\nStack trace:\n<pre>%s</pre>',
             $exception->getMessage(),
             $exception->getFile(),
             $exception->getLine(),
-            $exception->getTraceAsString()
+            htmlspecialchars($exception->getTraceAsString())
         );
     }
 }
