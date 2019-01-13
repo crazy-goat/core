@@ -6,16 +6,16 @@ namespace CrazyGoat\Core;
 use CrazyGoat\Core\Exceptions\HandlerNotFound;
 use CrazyGoat\Core\Exceptions\InvalidConfigException;
 use CrazyGoat\Core\Exceptions\RouteNotFound;
+use CrazyGoat\Core\Interfaces\ControllerInterface;
 use CrazyGoat\Core\Interfaces\ErrorHandlerInterface;
 use CrazyGoat\Core\Interfaces\ResponseRendererInterface;
 use CrazyGoat\Core\Interfaces\RouterInterface;
 use Psr\Container\ContainerInterface;
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 class App
 {
-
     /**
      * @var ?ErrorHandlerInterface
      */
@@ -29,12 +29,22 @@ class App
     /**
      * @var ContainerInterface
      */
-    private $container;
+    protected $container;
 
     /**
      * @var ?ResponseRendererInterface
      */
-    private $renderer = null;
+    protected $renderer = null;
+
+    /**
+     * @var ?Closure
+     */
+    protected $requestFactory = null;
+
+    /**
+     * @var ?Closure
+     */
+    protected $responseFactory = null;
 
     public function __construct(ContainerInterface $container)
     {
@@ -45,27 +55,34 @@ class App
     {
         try {
             $response = $this->process($this->getRequest(), $this->getResponse());
-            $this->respond($response);
         } catch (\Exception $exception) {
-            $this->getErrorHandler()->processError($exception);
-            exit();
+            $response = $this->getErrorHandler()->processError($exception, $this->getResponse());
         }
+        $this->respond($response);
     }
 
     /**
-     * @param RequestInterface $request
+     * @param ServerRequestInterface $request
      * @param ResponseInterface $response
      * @return ResponseInterface
      * @throws HandlerNotFound
      * @throws InvalidConfigException
      * @throws RouteNotFound
      */
-    public function process(RequestInterface $request, ResponseInterface $response): ResponseInterface
+    public function process(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $route = $this->getRouter()->dispatch($request);
 
         if ($this->container->has($route->getHandler())) {
-            $controller = new Controller($this->container->get($route->getHandler()));
+            $handler = $this->container->get($route->getHandler());
+
+            if ($handler instanceof ControllerInterface) {
+                $controller = new Controller($handler);
+            } elseif ($handler instanceof \Closure) {
+                $controller = new ClosureController($handler);
+            } else {
+                throw new \RuntimeException('Controller must be Closure or instance of ControllerInterface');
+            }
 
             foreach (array_reverse($route->getMiddlewares()) as $middleware) {
                 $controller->addMiddleware($this->container[$middleware]);
@@ -78,24 +95,29 @@ class App
     }
 
     /**
-     * @return RequestInterface
+     * @return ServerRequestInterface
      * @throws InvalidConfigException
      */
-    protected function getRequest(): RequestInterface
+    protected function getRequest(): ServerRequestInterface
     {
-        $request = null;
-        if ($this->container->has('requestFactory')) {
-            $request = $this->container->get('requestFactory');
-            if ($request instanceof \Closure) {
-                $request = $request();
+        if ($this->requestFactory === null) {
+            if ($this->container->has('requestFactory')) {
+                $requestFactory = $this->container->get('requestFactory');
+                if ($requestFactory instanceof \Closure) {
+                    $this->requestFactory = $requestFactory;
+                }
+            } else {
+                throw new InvalidConfigException('Request factory not set.');
             }
         }
 
-        if ($request instanceof RequestInterface) {
+        $request = ($this->requestFactory)();
+
+        if ($request instanceof ServerRequestInterface) {
             return $request;
         }
 
-        throw new InvalidConfigException('Request factory must be instance of RequestInterface.');
+        throw new InvalidConfigException('Request factory must be instance of ServerRequestInterface.');
     }
 
     /**
@@ -104,13 +126,18 @@ class App
      */
     protected function getResponse(): ResponseInterface
     {
-        $response = null;
-        if ($this->container->has('responseFactory')) {
-            $response = $this->container->get('responseFactory');
-            if ($response instanceof \Closure) {
-                $response = $response();
+        if ($this->responseFactory === null) {
+            if ($this->container->has('responseFactory')) {
+                $responseFactory = $this->container->get('responseFactory');
+                if ($responseFactory instanceof \Closure) {
+                    $this->responseFactory = $responseFactory;
+                }
+            } else {
+                throw new InvalidConfigException('Response factory not set.');
             }
         }
+        
+        $response = ($this->responseFactory)();
 
         if ($response instanceof ResponseInterface) {
             return $response;
@@ -125,14 +152,18 @@ class App
      */
     protected function getRouter(): RouterInterface
     {
-        if ($this->container->has('router')) {
-            $router = $this->container->get('router');
-            if ($router instanceof RouterInterface) {
-                return $router;
+        if ($this->router === null) {
+            if ($this->container->has('router')) {
+                $router = $this->container->get('router');
+                if ($router instanceof RouterInterface) {
+                    $this->router = $router;
+                } else {
+                    throw new InvalidConfigException('Router must be instance of ResponseInterface.');
+                }
             }
         }
 
-        throw new InvalidConfigException('Router must be instance of ResponseInterface.');
+        return $this->router;
     }
 
     protected function getErrorHandler(): ErrorHandlerInterface
@@ -144,8 +175,10 @@ class App
                     $this->errorHandler = $errorHandler;
                     return $this->errorHandler ;
                 }
+            } else {
+                throw new InvalidConfigException('No error handler set');
             }
-            $this->errorHandler = new SimpleErrorHandler();
+
         }
         return $this->errorHandler;
     }
@@ -165,10 +198,16 @@ class App
                     $this->renderer = $rendererObject;
                     return $this->renderer;
                 }
+            } else {
+                throw new InvalidConfigException('No response renderer set');
             }
-            $this->renderer = new DefaultResponseRenderer();
         }
 
         return $this->renderer;
+    }
+
+    public function getContainer(): ContainerInterface
+    {
+        return $this->container;
     }
 }

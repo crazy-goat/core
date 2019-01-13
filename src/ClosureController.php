@@ -7,16 +7,16 @@ use CrazyGoat\Core\Interfaces\MiddlewareInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-final class Controller implements MiddlewareInterface
+final class ClosureController implements MiddlewareInterface
 {
     use Middleware;
 
     /**
-     * @var ControllerInterface
+     * @var Closure
      */
     private $controller;
 
-    public function __construct(ControllerInterface $controller)
+    public function __construct(\Closure $controller)
     {
         $this->controller = $controller;
     }

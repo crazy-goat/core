@@ -5,6 +5,7 @@ namespace CrazyGoat\Core\Interfaces;
 
 use CrazyGoat\Core\Exceptions\RouteNotFound;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 interface RouterInterface
 {
@@ -13,5 +14,5 @@ interface RouterInterface
      * @return RouteInterface
      * @throws RouteNotFound
      */
-    public function dispatch(RequestInterface $request): RouteInterface;
+    public function dispatch(ServerRequestInterface $request): RouteInterface;
 }
