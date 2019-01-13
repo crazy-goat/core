@@ -6,7 +6,6 @@ namespace CrazyGoat\Core;
 use CrazyGoat\Core\Exceptions\HandlerNotFound;
 use CrazyGoat\Core\Exceptions\InvalidConfigException;
 use CrazyGoat\Core\Exceptions\RouteNotFound;
-use CrazyGoat\Core\Interfaces\ControllerInterface;
 use CrazyGoat\Core\Interfaces\ErrorHandlerInterface;
 use CrazyGoat\Core\Interfaces\ResponseRendererInterface;
 use CrazyGoat\Core\Interfaces\RouterInterface;
