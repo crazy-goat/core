@@ -15,7 +15,7 @@
     },
     "autoload": {
         "psr-4": {
-            "\\CrazyGoat\\Core\\": "src/"
+            "CrazyGoat\\Core\\": "src/"
         }
     }
 }
