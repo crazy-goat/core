@@ -1,4 +1,14 @@
 {
+    "name": "crazy-goat/core",
+    "description": "Very simple framework",
+    "type": "project",
+    "license": "GPL v3",
+    "authors": [
+        {
+            "name": "Piotr Hałas",
+            "email": "piotr@halas.net.pl"
+        }
+    ],
     "require": {
         "psr/http-message": "^1.0",
         "psr/container": "^1.0"
