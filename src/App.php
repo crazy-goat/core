@@ -89,7 +89,7 @@ class App
             }
 
             foreach (array_reverse($route->getMiddlewares()) as $middleware) {
-                $controller->addMiddleware($this->container[$middleware]);
+                $controller->addMiddleware($this->container->get($middleware));
             }
 
             return $controller->callMiddlewareStack($request, $response);

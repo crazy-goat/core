@@ -14,7 +14,7 @@ trait Middleware
      */
     protected $top;
 
-    protected function addMiddleware(callable $callable)
+    public function addMiddleware(callable $callable)
     {
         if (is_null($this->top)) {
             $this->initStack();
